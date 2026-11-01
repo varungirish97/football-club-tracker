@@ -1,0 +1,11 @@
+# Your personal settings and API token - never commit these
+config.json
+.token
+
+# Generated files
+.crests/
+__pycache__/
+*.pyc
+.venv/
+_to_delete/
+.DS_Store

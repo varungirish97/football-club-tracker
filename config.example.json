@@ -1,0 +1,10 @@
+{
+  "token": "YOUR_FOOTBALL_DATA_TOKEN",
+  "league": "PL",
+  "league_name": "Premier League",
+  "team_id": 57,
+  "team_name": "Arsenal FC",
+  "tla": "ARS",
+  "crest": "https://crests.football-data.org/57.png",
+  "colour": "#DB0007,#FF4D4D"
+}
