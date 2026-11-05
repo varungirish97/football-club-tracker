@@ -1,11 +1,9 @@
-# Your personal settings and API token - never commit these
+# Your personal settings - never commit
 config.json
-.token
 
-# Generated files
+# Generated on your Mac
+.cache.json
+.cache.json.tmp
 .crests/
 __pycache__/
-*.pyc
-.venv/
-_to_delete/
 .DS_Store

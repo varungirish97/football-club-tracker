@@ -1,82 +1,87 @@
-# ⚽ Football Club Tracker for the macOS menu bar
+# ⚽ Football Club Tracker
 
-Your club's league position, next fixtures and recent results, one click away in the menu bar.
+Your club in your Mac's menu bar: league position, live matchday scores, and a notification at full time.
 
-```
-🛡 ARS 2nd · 21 pts
-```
+<!-- Add a screenshot of the open menu here: docs/screenshot.png -->
 
-Click it for:
+## What you get
 
-- **The league table**: top 4 up front, with the rest four at a time in submenus. Your club's row is highlighted and every team gets its crest.
-- **Next 5 fixtures** in your own time zone. Cup and European games are shown in blue.
-- **Last 5 results**, colour-coded win, draw or loss.
+**In the menu bar**, always visible:
 
-It works for any club in the leagues covered by the free football-data.org plan: the Premier League, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga and Brasileirão.
+| When | It shows |
+| --- | --- |
+| Normal days | Your club's crest, league position and points: `2nd · 21` |
+| Matchday | Who you play and when: `@ LIV · 8:30 AM` |
+| During the match | The live score: `● LIV 1–2 ARS` |
+| After the match | The final score for a few hours: `FT LIV 1–3 ARS` |
 
-## Install (about 3 minutes, no API key needed)
+**Click it** to see:
 
-**You need:** a Mac and Python 3. macOS will offer to install Python the first time you run `python3` in Terminal.
+- **Form**: your last five results as 🟢 🟢 ⚪ 🟢 🔴. Hover over it for the scores.
+- **The league table**, top four first, then four at a time. Every club has its crest.
+- **Your next two fixtures**, in your own time zone.
 
-1. **Download this project**:
-   ```bash
-   git clone https://github.com/varungirish97/football-club-tracker.git
-   cd football-club-tracker
-   ```
+**At full time** you get a notification: *Liverpool 1–3 Arsenal · Win ✅*
 
-2. **Run setup** and pick your league and club:
-   ```bash
-   ./setup.py
-   ```
-   Press Enter at the API key question to use the shared server. Then pick your league, club and an optional colour. Your choices are saved to `config.json`, which stays on your Mac and is never committed.
+It works for any club in the Premier League, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga or Brasileirão.
 
-3. **Install [SwiftBar](https://swiftbar.app)**, the free app that puts scripts in the menu bar:
-   ```bash
-   brew install --cask swiftbar
-   ```
-   If you don't use Homebrew, download it from swiftbar.app instead.
+## Install
 
-4. **Open SwiftBar** and, when it asks for a plugin folder, choose this project's **`plugins`** folder. In the file picker, Cmd+Shift+G lets you paste a path.
-
-Your club appears in the menu bar within a few seconds.
-
-## Can't see it in the menu bar?
-
-On MacBooks with a notch, macOS hides menu bar items that don't fit, without any warning. The menu bar shows just the crest, position and points to save space. If it's still hidden, quit a menu bar app you don't need, or tighten the spacing between all menu bar icons (log out and back in afterwards):
+Open the **Terminal** app (press ⌘ Space, type *Terminal*, press Return), paste this line and press Return:
 
 ```bash
-defaults -currentHost write -globalDomain NSStatusItemSpacing -int 8
-defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 6
+curl -fsSL https://raw.githubusercontent.com/varungirish97/football-club-tracker/main/install.sh | bash
 ```
 
-To show the club's short name too (e.g. `ARS 2nd · 21 pts`), add `"compact": false` to `config.json`.
+The installer:
 
-## Change club
+1. Downloads the app.
+2. Installs [SwiftBar](https://swiftbar.app), the free app that puts it in your menu bar.
+3. Asks you to pick your league, club and an optional colour. Press Return at the first question; no account or API key is needed.
+4. Starts it. Your club's crest appears in the menu bar.
 
-Click the menu bar item, then choose **Change club…**, or run `./setup.py` again.
+To **update**, run the same line again. Your club and settings are kept.
+
+## Using it
+
+- **Change club**: click the crest, then **Change club…**
+- **Refresh now**: click the crest, then **Refresh**. It updates by itself every 10 minutes, and every 2 minutes around kickoff.
+- **Offline?** It keeps showing the last data it got, with a note saying when that was.
+
+### Can't see it in the menu bar?
+
+On MacBooks with a notch, macOS hides menu bar icons that don't fit, without telling you. Quit a menu bar app you don't need. Apps with long menus, like Chrome or VS Code, can also push it out of view while they're in front.
+
+## Uninstall
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/varungirish97/football-club-tracker/main/install.sh | bash -s -- --uninstall
+```
+
+## Settings
+
+Your choices live in `~/Library/Application Support/FootballClubTracker/config.json`. Optional extras you can add:
+
+| Setting | Effect |
+| --- | --- |
+| `"compact": false` | Show the club's short name in the menu bar: `ARS 2nd · 21 pts` |
+| `"notifications": false` | No full-time notifications |
+| `"clock": "24"` or `"12"` | Force the time format (by default it follows your Mac's setting) |
+| `"token": "…"` | Use your own free [football-data.org](https://www.football-data.org/client/register) API key instead of the shared server |
 
 ## How it works
 
 ```
-your Mac ──▶ shared server (Cloudflare Worker) ──▶ football-data.org
-             holds the API key, caches answers
+Mac menu bar (SwiftBar) ──▶ shared server (Cloudflare Worker) ──▶ football-data.org
+plugins/football.1m.py      adds the API key, caches answers       the data
 ```
 
-- `plugins/football.10m.py` is the SwiftBar plugin. SwiftBar runs it every 10 minutes (the `10m` in the filename) and shows whatever it prints. The first line goes in the menu bar; lines after `---` go in the dropdown.
-- By default it fetches data from a small **shared server**, a Cloudflare Worker that adds an API key and caches each answer for 10 minutes. Everyone following the same league shares one upstream call, so nobody needs their own key.
-- Each refresh makes **2 requests**: the league table and your club's matches.
-- Crests are downloaded once, shrunk with macOS's built-in `sips` tool and cached in `.crests/`.
-- Only the Python standard library is used, so there's nothing to `pip install`.
+- `plugins/football.1m.py` is a SwiftBar plugin written in Python, standard library only. SwiftBar runs it every minute. It redraws from a saved copy and only goes online when the data is due for a refresh.
+- The shared server is a small [Cloudflare Worker](https://github.com/varungirish97/football-proxy). It holds the API key and caches answers, so everyone following the same league shares one request.
+- `setup.py` asks for your club and writes `config.json`. `install.sh` is the installer.
 
-## Using your own API key
-
-The shared server is a free hobby service with no guarantees. For your own quota (10 calls a minute), get a free key at [football-data.org/client/register](https://www.football-data.org/client/register), run `./setup.py` and answer **y** at the API key question. The plugin then talks to football-data.org directly.
-
-## Limitations
-
-- On the free plan, scores and fixtures update with a delay. Live scores need a paid plan.
-- The colour bands (top 4 green, 5–6 blue, bottom 3 orange) follow Premier League places. Other leagues award places a bit differently.
+Developer install: `git clone` this repo, run `./setup.py`, and point SwiftBar's plugin folder at `plugins/`.
 
 ## Credits
 
-Data from [football-data.org](https://www.football-data.org). Menu bar plumbing by [SwiftBar](https://github.com/swiftbar/SwiftBar). Found through [public-apis](https://github.com/public-apis/public-apis).
+Data from [football-data.org](https://www.football-data.org). On the free plan, scores update with a short delay. Menu bar by [SwiftBar](https://github.com/swiftbar/SwiftBar). Found through [public-apis](https://github.com/public-apis/public-apis). MIT licensed.

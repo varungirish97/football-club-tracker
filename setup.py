@@ -16,7 +16,7 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(ROOT, "config.json")
-PLUGIN = os.path.join(ROOT, "plugins", "football.10m.py")
+PLUGIN = os.path.join(ROOT, "plugins", "football.1m.py")
 SHARED_SERVER = "https://football-proxy.football-proxy.workers.dev/v4"
 DIRECT_API = "https://api.football-data.org/v4"
 # Competitions the shared server serves (football-data.org's free plan)
@@ -137,8 +137,7 @@ def main():
     # Ask SwiftBar (if it's running) to reload, so the change shows straight away
     subprocess.run(["open", "-g", "swiftbar://refreshallplugins"], capture_output=True)
 
-    print(f"\n✅  Saved. Following {team['name']} in {league['name']}.")
-    print(f"    If SwiftBar isn't set up yet, point its Plugin Folder at:\n    {os.path.join(ROOT, 'plugins')}\n")
+    print(f"\n✅  Saved. Following {team['name']} in {league['name']}.\n")
 
 
 if __name__ == "__main__":
