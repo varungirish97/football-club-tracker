@@ -14,31 +14,29 @@ Click it for:
 
 It works for any club in the leagues covered by the free football-data.org plan: the Premier League, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga and Brasileirão.
 
-## Install (about 5 minutes)
+## Install (about 3 minutes, no API key needed)
 
 **You need:** a Mac and Python 3. macOS will offer to install Python the first time you run `python3` in Terminal.
 
-1. **Get a free API token** at [football-data.org/client/register](https://www.football-data.org/client/register). It arrives by email.
-
-2. **Download this project**:
+1. **Download this project**:
    ```bash
-   git clone https://github.com/<your-username>/football-club-tracker.git
+   git clone https://github.com/varungirish97/football-club-tracker.git
    cd football-club-tracker
    ```
 
-3. **Run setup** and pick your league and club:
+2. **Run setup** and pick your league and club:
    ```bash
    ./setup.py
    ```
-   It asks for your token, league, club and an optional colour, then saves them to `config.json`. That file stays on your Mac and is never committed.
+   Press Enter at the API key question to use the shared server. Then pick your league, club and an optional colour. Your choices are saved to `config.json`, which stays on your Mac and is never committed.
 
-4. **Install [SwiftBar](https://swiftbar.app)**, the free app that puts scripts in the menu bar:
+3. **Install [SwiftBar](https://swiftbar.app)**, the free app that puts scripts in the menu bar:
    ```bash
    brew install --cask swiftbar
    ```
    If you don't use Homebrew, download it from swiftbar.app instead.
 
-5. **Open SwiftBar** and, when it asks for a plugin folder, choose this project's **`plugins`** folder. In the file picker, Cmd+Shift+G lets you paste a path.
+4. **Open SwiftBar** and, when it asks for a plugin folder, choose this project's **`plugins`** folder. In the file picker, Cmd+Shift+G lets you paste a path.
 
 Your club appears in the menu bar within a few seconds.
 
@@ -59,10 +57,20 @@ Click the menu bar item, then choose **Change club…**, or run `./setup.py` aga
 
 ## How it works
 
+```
+your Mac ──▶ shared server (Cloudflare Worker) ──▶ football-data.org
+             holds the API key, caches answers
+```
+
 - `plugins/football.10m.py` is the SwiftBar plugin. SwiftBar runs it every 10 minutes (the `10m` in the filename) and shows whatever it prints. The first line goes in the menu bar; lines after `---` go in the dropdown.
-- Each refresh makes **2 API calls**: the league table and your club's matches. The free plan allows 10 calls a minute, so there's plenty of headroom.
+- By default it fetches data from a small **shared server**, a Cloudflare Worker that adds an API key and caches each answer for 10 minutes. Everyone following the same league shares one upstream call, so nobody needs their own key.
+- Each refresh makes **2 requests**: the league table and your club's matches.
 - Crests are downloaded once, shrunk with macOS's built-in `sips` tool and cached in `.crests/`.
 - Only the Python standard library is used, so there's nothing to `pip install`.
+
+## Using your own API key
+
+The shared server is a free hobby service with no guarantees. For your own quota (10 calls a minute), get a free key at [football-data.org/client/register](https://www.football-data.org/client/register), run `./setup.py` and answer **y** at the API key question. The plugin then talks to football-data.org directly.
 
 ## Limitations
 

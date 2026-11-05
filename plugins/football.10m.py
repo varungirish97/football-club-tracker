@@ -20,7 +20,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 CONFIG_FILE = os.path.join(ROOT, "config.json")
 CREST_DIR = os.path.join(ROOT, ".crests")
 SETUP = os.path.join(ROOT, "setup.py")
-BASE = "https://api.football-data.org/v4"
+# Default: the project's shared server, which holds an API key and caches
+# responses, so users don't need a key. With your own key in config.json the
+# plugin talks to football-data.org directly instead.
+SHARED_SERVER = "https://football-proxy.football-proxy.workers.dev/v4"
+DIRECT_API = "https://api.football-data.org/v4"
 PAGE = 4  # teams shown per menu level
 
 # Colours as "light-mode,dark-mode" pairs
@@ -56,8 +60,10 @@ def http_get(url, token=None):
         return r.read()
 
 
-def api(path, token):
-    return json.loads(http_get(f"{BASE}{path}", token))
+def api(path, cfg):
+    token = cfg.get("token")
+    base = DIRECT_API if token else cfg.get("server", SHARED_SERVER)
+    return json.loads(http_get(f"{base}{path}", token))
 
 
 def crest(url, size):
@@ -192,13 +198,11 @@ def main():
         return
 
     cfg = load_config()
-    token = cfg["token"]
-
-    standings = api(f"/competitions/{cfg['league']}/standings", token)
+    standings = api(f"/competitions/{cfg['league']}/standings", cfg)
     table = standings["standings"][0]["table"]
     league_name = standings["competition"]["name"]
     emblem = standings["competition"].get("emblem")
-    matches = api(f"/teams/{cfg['team_id']}/matches", token)["matches"]
+    matches = api(f"/teams/{cfg['team_id']}/matches", cfg)["matches"]
 
     # --- menu bar line ---
     mine = next((r for r in table if r["team"]["id"] == cfg["team_id"]), None)

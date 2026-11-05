@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-time setup for the Football Club Tracker.
 
-Asks for your football-data.org token and your club, then writes config.json.
+Asks for your club (and optionally your own football-data.org token), then writes config.json.
 Run it again any time to change club:   ./setup.py
 """
 
@@ -17,7 +17,10 @@ import urllib.request
 ROOT = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(ROOT, "config.json")
 PLUGIN = os.path.join(ROOT, "plugins", "football.10m.py")
-BASE = "https://api.football-data.org/v4"
+SHARED_SERVER = "https://football-proxy.football-proxy.workers.dev/v4"
+DIRECT_API = "https://api.football-data.org/v4"
+# Competitions the shared server serves (football-data.org's free plan)
+FREE = {"PL", "ELC", "PD", "SA", "BL1", "FL1", "DED", "PPL", "BSA", "CL", "EC", "WC"}
 DEFAULT_COLOUR = "#DB0007,#FF4D4D"
 
 
@@ -34,9 +37,11 @@ def ssl_context():
 SSL_CTX = ssl_context()
 
 
-def api(path, token):
-    req = urllib.request.Request(f"{BASE}{path}",
-                                 headers={"X-Auth-Token": token, "User-Agent": "football-menubar"})
+def api(path, token=None):
+    headers = {"User-Agent": "football-menubar"}
+    if token:
+        headers["X-Auth-Token"] = token
+    req = urllib.request.Request(f"{DIRECT_API if token else SHARED_SERVER}{path}", headers=headers)
     with urllib.request.urlopen(req, timeout=15, context=SSL_CTX) as r:
         return json.loads(r.read())
 
@@ -68,22 +73,28 @@ def main():
         with open(CONFIG_FILE) as f:
             old = json.load(f)
 
-    # 1. Token
-    print("You need a free API token from https://www.football-data.org/client/register")
-    hint = " (press Enter to keep your current one)" if old.get("token") else ""
-    token = input(f"Paste your token{hint}: ").strip() or old.get("token", "")
-    if not token:
-        sys.exit("No token given. Run ./setup.py again once you have one.")
+    # 1. Data source: the shared server (no key) or the user's own token
+    token = None
+    print("By default this uses the project's shared server, so you don't need an API key.")
+    own = input("Use your own football-data.org API key instead? [y/N]: ").strip().lower()
+    if own.startswith("y"):
+        print("Get a free key at https://www.football-data.org/client/register")
+        hint = " (press Enter to keep your current one)" if old.get("token") else ""
+        token = input(f"Paste your token{hint}: ").strip() or old.get("token", "")
+        if not token:
+            sys.exit("No token given. Run ./setup.py again, or answer N to use the shared server.")
 
     try:
         comps = api("/competitions", token)["competitions"]
     except urllib.error.HTTPError as e:
-        sys.exit(f"The API rejected that token (HTTP {e.code}). Check it and run ./setup.py again.")
+        if token:
+            sys.exit(f"The API rejected that token (HTTP {e.code}). Check it and run ./setup.py again.")
+        sys.exit(f"The shared server returned an error (HTTP {e.code}). Try again in a minute.")
     except urllib.error.URLError as e:
         sys.exit(f"Couldn't reach football-data.org: {e.reason}")
 
     # 2. League
-    leagues = sorted((c for c in comps if c.get("type") == "LEAGUE"),
+    leagues = sorted((c for c in comps if c.get("type") == "LEAGUE" and (token or c.get("code") in FREE)),
                      key=lambda c: (c["area"]["name"], c["name"]))
     print("\nWhich league does your club play in?\n")
     league = choose("League", leagues, lambda c: f"{c['name']} ({c['area']['name']})")
@@ -92,7 +103,7 @@ def main():
     try:
         teams = api(f"/competitions/{league['code']}/teams", token)["teams"]
     except urllib.error.HTTPError as e:
-        if e.code == 403:
+        if e.code in (403, 404):
             sys.exit(f"{league['name']} isn't included in your plan. Run ./setup.py and pick another league.")
         raise
     teams.sort(key=lambda t: t["name"])
@@ -107,7 +118,6 @@ def main():
     colour = colour or old.get("colour", DEFAULT_COLOUR)
 
     cfg = {
-        "token": token,
         "league": league["code"],
         "league_name": league["name"],
         "team_id": team["id"],
@@ -116,9 +126,11 @@ def main():
         "crest": team.get("crest"),
         "colour": colour,
     }
+    if token:
+        cfg["token"] = token  # only stored if you chose your own key
     with open(CONFIG_FILE, "w") as f:
         json.dump(cfg, f, indent=2)
-    os.chmod(CONFIG_FILE, stat.S_IRUSR | stat.S_IWUSR)  # only you can read your token
+    os.chmod(CONFIG_FILE, stat.S_IRUSR | stat.S_IWUSR)  # only you can read it
 
     os.chmod(PLUGIN, os.stat(PLUGIN).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
