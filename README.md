@@ -69,19 +69,6 @@ Your choices live in `~/Library/Application Support/FootballClubTracker/config.j
 | `"clock": "24"` or `"12"` | Force the time format (by default it follows your Mac's setting) |
 | `"token": "…"` | Use your own free [football-data.org](https://www.football-data.org/client/register) API key instead of the shared server |
 
-## How it works
-
-```
-Mac menu bar (SwiftBar) ──▶ shared server (Cloudflare Worker) ──▶ football-data.org
-plugins/football.1m.py      adds the API key, caches answers       the data
-```
-
-- `plugins/football.1m.py` is a SwiftBar plugin written in Python, standard library only. SwiftBar runs it every minute. It redraws from a saved copy and only goes online when the data is due for a refresh.
-- The shared server is a small [Cloudflare Worker](https://github.com/varungirish97/football-proxy). It holds the API key and caches answers, so everyone following the same league shares one request.
-- `setup.py` asks for your club and writes `config.json`. `install.sh` is the installer.
-
-Developer install: `git clone` this repo, run `./setup.py`, and point SwiftBar's plugin folder at `plugins/`.
-
 ## Credits
 
 Data from [football-data.org](https://www.football-data.org). On the free plan, scores update with a short delay. Menu bar by [SwiftBar](https://github.com/swiftbar/SwiftBar). Found through [public-apis](https://github.com/public-apis/public-apis). MIT licensed.
